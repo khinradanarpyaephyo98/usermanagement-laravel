@@ -197,7 +197,7 @@
                             </div>
                             <div clas="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }}
+                                    {{ Auth::user()->name }} 
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -227,38 +227,40 @@
                                 {{ session('success') }}
                             </div>
                         @endif
-
-                        <div class="collapse navbar-collapse " id="navbarNavAltMarkup">
-                            <div class="navbar-nav  ms-md-auto ms-sx-auto ">
-                                <div class="d-flex flex-row " style="height:40px">
-                                    <a class="nav-item nav-link " href="#" id="navbar-a" ><span>English <img src="/images/us-flag.png" style="width: 20px; height:20px; border-radius:40%"></span></a>
-                                </div>
-                                <div class=" bg-white mx-2 "  id="navbar-a"  >
-                                    <a class="nav-item nav-link " href="#"><i class="fa-solid fa-fax"></i> </a>
-                                </div>
-                                <div class=" bg-white mx-2 " id="navbar-a">
-                                    <a class="nav-item nav-link " href="#"  ><i class="fas fa-volume-mute text-gray" ></i> </a>
-                                </div>
-                                <div class="bg-white mx-2" id="navbar-a">
-                                    <a class="nav-item nav-link" href="#"  ><i class="bi bi-brightness-high"></i></a>
-                                </div>
-                                <div clas="nav-item dropdown">
-                                    <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                        {{ Auth::user()->name }}
-                                    </a>
-                                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                        <a class="dropdown-item" href="{{ route('logout') }}"
-                                            onclick="event.preventDefault();
-                                                            document.getElementById('logout-form').submit();">
-                                            {{ __('Logout') }}
-                                        </a>
-                                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                                            @csrf
-                                        </form>
+                        
+                        
+                            <div class="collapse navbar-collapse " id="navbarNavAltMarkup">
+                                <div class="navbar-nav  ms-md-auto ms-sx-auto ">
+                                    <div class="d-flex flex-row " style="height:40px">
+                                        <a class="nav-item nav-link " href="#" id="navbar-a" ><span>English <img src="/images/us-flag.png" style="width: 20px; height:20px; border-radius:40%"></span></a>
                                     </div>
-                                </div>     
+                                    <div class=" bg-white mx-2 "  id="navbar-a"  >
+                                        <a class="nav-item nav-link " href="#"><i class="fa-solid fa-fax"></i> </a>
+                                    </div>
+                                    <div class=" bg-white mx-2 " id="navbar-a">
+                                        <a class="nav-item nav-link " href="#"  ><i class="fas fa-volume-mute text-gray" ></i> </a>
+                                    </div>
+                                    <div class="bg-white mx-2" id="navbar-a">
+                                        <a class="nav-item nav-link" href="#"  ><i class="bi bi-brightness-high"></i></a>
+                                    </div>
+                                    <div clas="nav-item dropdown">
+                                        <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                            {{ Auth::user()->name }}({{ Auth::user()->role->name}})
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                            <a class="dropdown-item" href="{{ route('logout') }}"
+                                                onclick="event.preventDefault();
+                                                                document.getElementById('logout-form').submit();">
+                                                {{ __('Logout') }}
+                                            </a>
+                                            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                                @csrf
+                                            </form>
+                                        </div>
+                                    </div>     
+                                </div>
                             </div>
-                        </div>
+                      
                     </div>
                 </div>
                 <div class="container bg-white d-flex flex-column justify-content-center align-items-center bg-light rounded " >  
@@ -291,44 +293,47 @@
                                 <th scope="col"  style="color:gray; padding-left:20px" class="pb-4" >ROLE</th>
                                 <th scope="col"  style="color:gray" class="pb-4">ACTIONS</th>
                             </tr>
-                            @auth
+                            @auth   
                                 @foreach ($roles as $role)
-                                    <tr >
-                                        <td class="py-2 ps-3 ">
-                                            <h6 class="text-secondary">{{ $role->rolename}}</h6> 
-                                        </td>
-                                        <td class="py-2 ">
-                                            @foreach ($feature_permission_check as $result)
-                                                @if ($result->feature === 'roles' && $result->rolename === Auth::user()->role->name)
-                                                    @php
-                                                        $permissionsArray = explode(',', $result->permissions);
-                                                        $hasUpdatePermission = in_array('update', array_map('trim', $permissionsArray));
-                                                    @endphp
-                
-                                                    @if ($hasUpdatePermission)
-                                                        <a class="btn btn-primary " href="/roles/{{$role->id}}/edit "><i class="fa-solid fa-pen-to-square" style="margin-left: 5px; margin-right:5px;"></i>Edit</a>
+                                    @can('view',$role )
+                                        <tr >
+                                            <td class="py-2 ps-3 ">
+                                                <h6 class="text-secondary">{{ $role->rolename}}</h6> 
+                                            </td>
+                                            <td class="py-2 ">
+                                                @foreach ($feature_permission_check as $result)
+                                                    @if($result->feature === 'roles' && $result->rolename === Auth::user()->role->name)
+                                                        @php
+                                                            $permissionsArray = explode(',', $result->permissions);
+                                                            $hasUpdatePermission = in_array('update', array_map('trim', $permissionsArray));
+                                                        @endphp
+                                                       @if ($hasUpdatePermission)
+                                                        <a class="btn btn-primary " href="/roles/{{$role->id}}/edit"><i class="fa-solid fa-pen-to-square" style="margin-left: 5px; margin-right:5px;"></i>Edit</a>
+                                                       @endif
                                                     @endif
-                                                @endif
-                                            @endforeach 
-                                            @foreach ($feature_permission_check as $result)
-                                                @if ($result->feature === 'roles' && $result->rolename === Auth::user()->role->name)
-                                                    @php
-                                                        $permissionsArray = explode(',', $result->permissions);
-                                                        $hasDeletePermission = in_array('delete', array_map('trim', $permissionsArray));
-                                                    @endphp
-                
-                                                    @if ($hasDeletePermission)
-                                                        <a href="/roles/{{$role->id}}/delete" class="btn btn-outline-danger" style="margin-left: 10px;" >Delete</a>
-                                                        @endif
-                                                @endif
-                                            @endforeach
-                                                                         
-                                        </td>
-                                    </tr>
+                                                @endforeach 
+                                                @foreach ($feature_permission_check as $result)
+                                                    @if ($result->feature === 'roles' && $result->rolename === Auth::user()->role->name)
+                                                        @php
+                                                            $permissionsArray = explode(',', $result->permissions);
+                                                            $hasDeletePermission = in_array('delete', array_map('trim', $permissionsArray));
+                                                        @endphp
+                    
+                                                        @if ($hasDeletePermission)
+                                                            <a href="/roles/{{$role->id}}/delete" class="btn btn-outline-danger" style="margin-left: 10px;" >Delete</a>
+                                                            @endif
+                                                    @endif
+                                                @endforeach
+                                                                            
+                                            </td>
+                                        </tr>
+                                    @else
+                                        <tr>
+                                        </tr>
+                                    @endcan
                                 @endforeach
                             @endauth       
-                        </table>
-
+                        </table>   
                         <div class="d-flex flex-row">
                             <div class="dropdown">
                                 <a class="btn btn-light dropdown-toggle" href="#" role="button" id="dropdown_pageno" data-bs-toggle="dropdown" aria-expanded="false" >
@@ -365,6 +370,7 @@
                                 </ul>
                             </nav>
                         </div>  
+                   
                 </div>
             </div>
         </div>

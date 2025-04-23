@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\RolesService;
 use App\Models\Roles;
 use App\Models\Features;
 use App\Models\User;
@@ -10,25 +11,35 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
 use App\Http\Controllers\Controller\getFeatures;
-use Illuminate\Support\Facades\Session;
+use App\Policies\RolesPolicy;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Permission;
 
 class RolesController extends Controller
-
-
 {
+
+    public function __construct()
+    {
+       // $this->authorizeResource(Roles::class,'roles');
+    }
+
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        if (Auth::user()) {
-            $users = User::with('role.permissions')->get();
+    {  
+        /* 
+        dd(Gate::allows('roles.view'));
+        $this->authorize('view',new Roles);
         
-            // Get the currently logged-in user 
+        */
+        
+        if (Auth::user()) {    
+             
+            $this->authorize('view',new Roles);          
             $loginUser = Auth::user();
             $features = $this->getFeatures();
                 
@@ -45,7 +56,7 @@ class RolesController extends Controller
 
             $currentPage = $roles->currentPage();
             $totalPages  = $roles-> lastPage();
-          
+           
             // Pass the data to your Blade view
             return view('roles.index', [
                 'loginUser' => $loginUser,
@@ -68,6 +79,49 @@ class RolesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+    
+     /**
+     * Display the create page.
+     *
+     * @param  \App\Models\Roles  $roles
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $loginUser = Auth::user();
+        //dd($loginUser);
+        $this->authorize('create',new Roles);
+       
+        $features = $this->getFeatures();
+
+        $feature_permissions = Features::with('permission')
+        ->orderBy('id')
+        ->get();
+
+        $featuresWithPermissions = [];
+
+        foreach ($feature_permissions  as $feature) {
+            $permissionsArray = [];
+            foreach ($feature->permission as $permission) {
+                $permissionsArray[] = [
+                    'permission_id' => $permission->id,
+                    'permission_name' => $permission->name,
+                ];
+            }
+
+            $featuresWithPermissions[$feature->id] = [
+                'feature_id' => $feature->id,
+                'feature_name' => $feature->name,
+                'permissions' => $permissionsArray,
+            ];
+            
+        }
+        return view('roles.create',[
+            'features'=>$features,
+            'featuresWithPermissions'=>$featuresWithPermissions
+        ]);
+    }
+
     public function store(Request $request)
     {
         // 1. Validate the incoming request data
@@ -93,21 +147,35 @@ class RolesController extends Controller
         // 6. Render the index view with features data
         return redirect()->route('roles.index')->with('success','Roles permissions created successfully!');
     }
+  
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Roles  $roles
-     * @return \Illuminate\Http\Response
-     */
-    public function show(Roles $roles)
-    {
-        $features = $this->getFeatures();
-
-        $feature_permissions = Features::with('permission')
-       ->orderBy('id')
+   public function edit(Roles $role)
+   {   
+        if (Gate::denies('update', $role)) {
+          abort(403);
+        }
+        if (Auth::user()) {
+           //dd(Auth::user());
+           $this->authorize('update',$role);
+           $features =DB::table('users AS u')
+           ->join('roles_permission AS rp', 'u.role_id', '=', 'rp.role_id')
+           ->join('permissions AS p', 'rp.permission_id', '=', 'p.id')
+           ->join('features AS f', 'f.id', '=', 'p.feature_id')
+           ->join('roles AS r', 'u.role_id', '=', 'r.id')
+           ->where('u.id', Auth::user()->id)
+           ->select(DB::raw('DISTINCT f.name AS feature_name,u.role_id as role_id, r.name as rolename'))
+           ->get();
+           //dd($features);
+           $checkedPermissions = Roles::find($role->getAttributes()['id']) 
+                                ->permissions()
+                                ->pluck('permissions.id')
+                                ->toArray();
+           
+          // dd($checkedPermissions);
+           $feature_permissions = Features::with('permission')
+           ->orderBy('id')
        ->get();
-   
+    
         $featuresWithPermissions = [];
         
         foreach ($feature_permissions  as $feature) {
@@ -118,62 +186,12 @@ class RolesController extends Controller
                     'permission_name' => $permission->name,
                 ];
             }
-        
             $featuresWithPermissions[$feature->id] = [
                 'feature_id' => $feature->id,
                 'feature_name' => $feature->name,
                 'permissions' => $permissionsArray,
             ];
-        }
-        return view('roles.create',[
-            'features'=>$features,
-            'featuresWithPermissions'=>$featuresWithPermissions
-        ]);
-    }
-
-    public function edit(int $id)
-    {   
-        $role =  Roles::findOrFail($id)
-                ->where('id','=',$id)
-                ->select('id')
-                ->first();
-
-        $features =DB::table('users AS u')
-                ->join('roles_permission AS rp', 'u.role_id', '=', 'rp.role_id')
-                ->join('permissions AS p', 'rp.permission_id', '=', 'p.id')
-                ->join('features AS f', 'f.id', '=', 'p.feature_id')
-                ->join('roles AS r', 'u.role_id', '=', 'r.id')
-                ->where('u.id', Auth::user()->id)
-                ->select(DB::raw('DISTINCT f.name AS feature_name,u.role_id as role_id, r.name as rolename'))
-                ->get();
-
-        $checkedPermissions = Roles::findOrFail($id) 
-                            ->permissions()
-                            ->pluck('permissions.id')
-                            ->toArray();
-
-       // dd($checkedPermissions);
-       $feature_permissions = Features::with('permission')
-       ->orderBy('id')
-       ->get();
-   
-        $featuresWithPermissions = [];
-        
-        foreach ($feature_permissions  as $feature) {
-            $permissionsArray = [];
-            foreach ($feature->permission as $permission) {
-                $permissionsArray[] = [
-                    'permission_id' => $permission->id,
-                    'permission_name' => $permission->name,
-                ];
-            }
-        
-            $featuresWithPermissions[$feature->id] = [
-                'feature_id' => $feature->id,
-                'feature_name' => $feature->name,
-                'permissions' => $permissionsArray,
-            ];
-        }
+        } 
         
         return view('roles.edit',
                 [
@@ -181,7 +199,9 @@ class RolesController extends Controller
                     'featuresWithPermissions'=>$featuresWithPermissions,
                     'checkedPermissions'=>$checkedPermissions,
                     'role'=>$role
-                ]);
+                ]);   
+        }
+    
     }
 
     /**
@@ -195,15 +215,15 @@ class RolesController extends Controller
     public function update(Request $request, Roles $roles, int $id)
     {
         if($request->isMethod('post')){
-            if(auth()->check()){
-                $role = $roles::findOrFail($id);
+            
+            $role = $roles::findOrFail($id);
 
-                $permissions = $request->input('permissions',[]);
-                
-                $role->permissions()->sync(array_keys($permissions));
+            $permissions = $request->input('permissions',[]);
+            
+            $role->permissions()->sync(array_keys($permissions));
 
-                return redirect()->route('roles.index')->with('success','Roles permissions updated successfully!');
-            }
+            return redirect()->route('roles.index')->with('success','Roles permissions updated successfully!');
+            
         }
 
     }
@@ -215,13 +235,16 @@ class RolesController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function destroy(int $role) : RedirectResponse
-    {
+    {   if (Auth::user()){
+        
+        $this->authorize('delete',$role);
          // $role will contain the ID from the URL
         $roleToDelete = Roles::findOrFail($role); // Find the role by its ID
 
         // Perform the deletion logic
         $roleToDelete->delete();
         
+        }
         return redirect()->route('roles.index')->with('success', 'Role deleted successfully!');
     }
 

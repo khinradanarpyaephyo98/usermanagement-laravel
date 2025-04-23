@@ -246,6 +246,7 @@
                                 <div clas="nav-item dropdown">
                                     <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                         {{ Auth::user()->name }}
+                                       ( {{ Auth::user()->role->name }})
                                     </a>
     
                                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
@@ -271,9 +272,18 @@
                         <form class="d-flex" role="search" >
                             <input type="text" class="form-control" placeholder=" Search "  
                             style=" font-family:sans-serif; font-style: normal; font-weight: normal;  height:40px; text-transform: lowercase !important; " id="searchInput" autocapitalize="none"/>
+                            @foreach ($feature_permission_check as $result)
+                                @if ($result->feature === 'users' && $result->rolename === Auth::user()->role->name)
+                                    @php
+                                        $permissionsArray = explode(',', $result->permissions);
+                                        $hasCreatePermission = in_array('create', array_map('trim', $permissionsArray));
+                                    @endphp
 
-
-                            <a href="/users/create" class="btn btn-primary col-md-2 col-l-2 col-sm-2" type="submit" style="margin-left:30px ;height:40px; font-size:small"><i class="fa-solid fa-plus " ></i>  Create User</a>
+                                    @if($hasCreatePermission)
+                                    <a href="/users/create" class="btn btn-primary col-md-2 col-l-2 col-sm-2" type="submit" style="margin-left:30px ;height:40px; font-size:small"><i class="fa-solid fa-plus " ></i>  Create User</a>
+                                    @endif
+                                @endif
+                            @endforeach
                         </form>
                         <table class="table table-striped" style="table-layout: fixed; width: 100%; border:none;" >
                             <tr >   
@@ -289,8 +299,30 @@
                                             {{$user->role_name}}
                                         </td>
                                         <td class="py-2 ">
-                                            <a class="btn btn-primary " href="/users/{{$user->id}}/edit "><i class="fa-solid fa-pen-to-square" style="margin-left: 5px; margin-right:5px;"></i>Edit</a>
-                                            <a href="/users/{{$user->id}}/delete" class="btn btn-outline-danger" style="margin-left: 10px;" >Delete {{$user->id}}</a>
+                                            @foreach ($feature_permission_check as $result)
+                                                @if ($result->feature === 'users' && $result->rolename === Auth::user()->role->name)
+                                                    @php
+                                                        $permissionsArray = explode(',', $result->permissions);
+                                                        $hasEditPermission = in_array('update', array_map('trim', $permissionsArray));
+                                                    @endphp
+                
+                                                    @if($hasEditPermission)
+                                                        <a class="btn btn-primary " href="/users/{{$user->id}}/edit "><i class="fa-solid fa-pen-to-square" style="margin-left: 5px; margin-right:5px;"></i>Edit</a>
+                                                    @endif
+                                                @endif
+                                            @endforeach
+                                            @foreach ($feature_permission_check as $result)
+                                                @if ($result->feature === 'users' && $result->rolename === Auth::user()->role->name)
+                                                    @php
+                                                        $permissionsArray = explode(',', $result->permissions);
+                                                        $hasDeletePermission = in_array('delete', array_map('trim', $permissionsArray));
+                                                    @endphp
+                
+                                                    @if($hasDeletePermission)
+                                                        <a href="/users/{{$user->id}}/delete" class="btn btn-outline-danger" style="margin-left: 10px;" >Delete {{$user->id}}</a>
+                                                    @endif
+                                                @endif
+                                            @endforeach
                                         </td>
                                     </tr>
                                 @endforeach

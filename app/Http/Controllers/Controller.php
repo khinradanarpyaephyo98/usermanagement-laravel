@@ -6,7 +6,6 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
-use App\Http\Controllers\ArticleController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB; 
 
@@ -22,15 +21,10 @@ class Controller extends BaseController
             ->join('roles AS r', 'u.role_id', '=', 'r.id')
             ->where('u.id', Auth::user()->id)
             ->select(DB::raw('DISTINCT f.name AS feature_name,u.role_id as role_id, r.name as rolename'))
-            ->get();
-        
-            session()->flash('features', $features);
-        
+            ->get();   
+            session()->flash('features', $features);     
         return $features;
     }
-
-   
-
 
     
 }

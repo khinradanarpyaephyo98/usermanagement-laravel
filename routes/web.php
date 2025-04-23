@@ -7,6 +7,9 @@ use App\Http\Controllers\RolesController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CustomerController;
 use App\Models\Roles;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -32,36 +35,47 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Roles
-Route::middleware(['auth', 'permission:roles.view'])->group(function(){
-    Route::get('/roles', [RolesController::class,'index'])->name('roles.index');
+
+Route::middleware(['auth'])->group(function(){
+    Route::get('/roles', [RolesController::class, 'index'])->name('roles.index');
 });
 
-Route::middleware(['auth', 'permission:roles.create'])->group(function(){
-    Route::get('/roles/create', [RolesController::class,'show'])->name('roles.create');
+Route::middleware(['auth'])->group(function(){
+    Route::get('/roles/create', [RolesController::class,'create'])->name('roles.create');
     Route::post('/roles/create', [RolesController::class,'store'])->name('roles.store');
 });
 
-Route::middleware(['auth', 'permission:roles.update'])->group(function(){
-    Route::get('/roles/{id}/edit', [RolesController::class,'edit'])->name('roles.edit');
-    Route::post('/roles/{id}/edit', [RolesController::class,'update'])->name('roles.update');
+Route::middleware(['auth'])->group(function(){
+   Route::get('/roles/{role}/edit', [RolesController::class,'edit'])->name('roles.edit');
+    Route::post('/roles/{role}/edit', [RolesController::class,'update'])->name('roles.update');
 });
 
-Route::middleware(['auth', 'permission:roles.delete'])->group(function(){
+
+//Route::get('/roles/{role}/edit', [RolesController::class,'edit'])->name('roles.edit');
+
+Route::get('/force-login', function () {
+    return 'Logged in as ' . Auth::user()->role;
+});
+
+Route::middleware(['auth'])->group(function(){
     Route::get('/roles/{id}/delete', [RolesController::class,'destroy'])->name('roles.delete');
 });
 
+/* Route::get('/test-policy/{role}', function (\App\Models\Roles $role) {
+    dd('Route works, role:', $role->id , ", Role name: " , $role->name);
+}); */
 
 //Users
-Route::middleware(['auth', 'permission:users.view'])->group(function(){
+Route::middleware(['auth'])->group(function(){
     Route::get('/users', [UsersController::class,'index'])->name('users.index');
 });
 
-Route::middleware(['auth', 'permission:users.create'])->group(function(){
-    Route::get('/users/create', [UsersController::class,'show'])->name('users.create');
+Route::middleware(['auth'])->group(function(){
+    Route::get('/users/create', [UsersController::class,'create'])->name('users.create');
     Route::post('/users/create', [UsersController::class,'store'])->name('users.store');
 });
 
-Route::middleware(['auth', 'permission:users.update'])->group(function(){
+Route::middleware(['auth'])->group(function(){
     Route::get('/users/{id}/edit', [UsersController::class,'edit'])->name('users.edit');
     Route::post('/users/{id}/edit', [UsersController::class,'update'])->name('users.update');
 });
@@ -74,3 +88,5 @@ Route::middleware(['auth', 'permission:users.delete'])->group(function(){
 Route::middleware(['auth', 'permission:customer.view'])->group(function(){
     Route::get('/customer', [CustomerController::class,'index'])->name('customer.index');
 });
+
+

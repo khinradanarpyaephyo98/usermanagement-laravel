@@ -1,3 +1,4 @@
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -197,6 +198,7 @@
             
             <div class="col-sm-10 col-md-10 col-lg-9 " id="main-layout">
                 <div class="container">
+                    
                     <div class="navbar navbar-expand-md navbar-expand-sm navbar-light">
                         <div class="container">
                             <div class="navbar-header" >
@@ -237,6 +239,7 @@
                             </div>
                         </div>
                     </div>
+                   
                         </div>
                     </div>
                 </div>
@@ -245,38 +248,40 @@
                    
                 </div>
                 <div class="container d-flex flex-column justify-content-center align-items-center bg-light rounded " style="width: 90%;" >
-                    <div class="container ps-1" style="justify-content: space-between; margin-top:20px">                    
-                        <form action="{{ route('roles.update', $role->id) }}"method="POST">
-                        @csrf
-                        <div class="fea-per">
-                            <table class="table table-borderless" style="table-layout: fixed; width: 100%; border:none;">
-                                
-                            @foreach ($featuresWithPermissions as $feature)
-                             
-                <tr>
-                    <td class="py-4 " style="width: 10%;"><h6>{{ $feature['feature_name'] }}</h6></td>
-                    <td class="py-4 text-secondary">
-                        <input class="form-check-input select-all-features ms-4 " type="checkbox" value="" id="selectAll_feature_{{ $feature['feature_id'] }}" data-feature-id="{{ $feature['feature_id'] }}">
-                        <label class="form-check-label text-secondary" for="selectAll_feature_{{ $feature['feature_id'] }}" data-feature-id="{{ $feature['feature_id'] }}"> Select All</label>
+                    <div class="container ps-1" style="justify-content: space-between; margin-top:20px"> 
+                       
+                        <form action="{{ route('roles.update', $role) }}"method="POST">
+                        @csrf                
+                        <div class="fea-per">  
+                            <table class="table table-borderless" style="table-layout: fixed; width: 100%; border:none;">     
+                            @foreach ($featuresWithPermissions as $feature)      
+                                <tr>
+                                    <td class="py-4 " style="width: 10%;"><h6>{{ $feature['feature_name'] }}</h6></td>
+                                    <td class="py-4 text-secondary">
+                                        <input class="form-check-input select-all-features ms-4 " type="checkbox" value="" id="selectAll_feature_{{ $feature['feature_id'] }}" data-feature-id="{{ $feature['feature_id'] }}">
+                                        <label class="form-check-label text-secondary" for="selectAll_feature_{{ $feature['feature_id'] }}" data-feature-id="{{ $feature['feature_id'] }}"> Select All</label>
 
-                        @if (is_array($feature['permissions']))
-                            @foreach ($feature['permissions'] as $permission)
-                                <input class="form-check-input ms-4 permission-checkbox" type="checkbox" name="permissions[{{ $permission['permission_id'] }}]" value="1" id="permission_{{ $permission['permission_id'] }}" data-feature-id="{{ $feature['feature_id'] }}"
-                                    @if (in_array($permission['permission_id'], $checkedPermissions)) checked @endif
-                                >
-                                <label class="form-check-label text-secondary" for="permission_{{ $permission['permission_id'] }}"> {{ $permission['permission_name'] }} </label>
-                            @endforeach
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
+                                        @if (is_array($feature['permissions']))
+                                            @foreach ($feature['permissions'] as $permission)
+                                                <input class="form-check-input ms-4 permission-checkbox" type="checkbox" name="permissions[{{ $permission['permission_id'] }}]" value="1" id="permission_{{ $permission['permission_id'] }}" data-feature-id="{{ $feature['feature_id'] }}"
+                                                    @if (in_array($permission['permission_id'], $checkedPermissions)) checked @endif
+                                                >
+                                                <label class="form-check-label text-secondary" for="permission_{{ $permission['permission_id'] }}"> {{ $permission['permission_name'] }} </label>
+                                            @endforeach
+                                        @endif
+                                    </td>
+                                </tr>
+                                
+                                @endforeach
                             </table>
                             <hr style="height:5px;border:#F0F0F0; width:90%; text-align:center;margin-left:80px"/>
                             <div class="d-flex text-center">
                                 <button class="btn btn-primary text-center align-item-center justify-content-center mx-auto" type="submit"> Update</button>
                             </div>
                         </div>
+                        
                     </form>
+                   
                     </div>
                 </div>
             </div>

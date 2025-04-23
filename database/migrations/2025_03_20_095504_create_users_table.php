@@ -44,8 +44,8 @@ return new class extends Migration
     {
         Schema::disableForeignKeyConstraints(); // Equivalent to SET FOREIGN_KEY_CHECKS = 0;
         Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('sessions');
+        /* Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('sessions'); */
         Schema::enableForeignKeyConstraints();
     }
 };

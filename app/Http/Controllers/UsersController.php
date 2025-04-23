@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
+
 use App\Models\Roles;
 use App\Models\User;
+use App\Models\Features;
+use App\Services\UsersService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +18,12 @@ use App\Http\Controllers\Controller\getFeatures;
 
 class UsersController extends Controller
 {
-    /**
+    public function __construct()
+    {
+       
+    }
+    
+     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
@@ -21,6 +31,7 @@ class UsersController extends Controller
     public function index()
     {
         if (Auth::user()) {
+            $this->authorize('view',new User);       
            // $users = User::with('role.permissions')->get();
              $features = $this->getFeatures();
 
@@ -32,14 +43,25 @@ class UsersController extends Controller
             $currentPage = $usersWithRoles->currentPage();
             $totalPages  = $usersWithRoles-> lastPage();
 
+            $feature_permission_check = DB::table('permissions')
+                                        ->join('features AS f', 'f.id', '=', 'permissions.feature_id')
+                                        ->join('roles_permission AS rp', 'rp.permission_id', '=', 'permissions.id')
+                                        ->join('roles AS r', 'r.id', '=', 'rp.role_id')
+                                        ->groupBy('r.name', 'f.name')
+                                        ->selectRaw('r.name AS rolename, GROUP_CONCAT(permissions.name) AS permissions, f.name AS feature')
+                                        ->get();
+            
+
              return view('users.index',[
                 'features'=>$features,
                 'users' =>$usersWithRoles,
                 'currentPage' =>$currentPage,
-                'totalPages' =>$totalPages
+                'totalPages' =>$totalPages,
+                'feature_permission_check'=>$feature_permission_check
              ]);
         }
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -49,45 +71,82 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validate the incoming request data
-        $request->validate([
-            'name' => 'required|string|max:255|unique:users',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:', // 'confirmed' requires a password_confirmation field
-            'role_id' => 'nullable|exists:roles,id', // 
-        ]);
-
-        // 2. Create the new user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role_id'=>$request->role_id
-        ]);
-
-        $features =$this->getFeatures();
+        if (Auth::user()){
+            // 1. Validate the incoming request data
+            $request->validate([
+                'name' => 'required|string|max:255|unique:users',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:', // 'confirmed' requires a password_confirmation field
+                'role_id' => 'nullable|exists:roles,id', // 
+            ]);
     
-        $request->session()->flash('features', $features);
+            // 2. Create the new user
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+                'role_id'=>$request->role_id
+            ]);
+    
+            $features =$this->getFeatures();
+            
+
+        }
 
         return redirect()->route('users.index')->with('success', 'User created successfully!');
     }
 
     /**
-     * Display the specified resource.
+     * show create user
      *
      * @param  \App\Models\User  $users
      * @return \Illuminate\Http\Response
      */
-    public function show(User $user)
+    public function create(User $user)
     {
-        $features =$this->getFeatures();
-
-       // Get all roles with their name and ID
-        $roles = Roles::all(['id', 'name']);
-        // dd($roles);
+        if (Auth::user()){
+            $this->authorize('create',new User);
+            $features =$this->getFeatures();
+            $feature_permissions = Features::with('permission')
+            ->orderBy('id')
+            ->get();
+    
+            $featuresWithPermissions = [];
+    
+            foreach ($feature_permissions  as $feature) {
+                $permissionsArray = [];
+                foreach ($feature->permission as $permission) {
+                    $permissionsArray[] = [
+                        'permission_id' => $permission->id,
+                        'permission_name' => $permission->name,
+                    ];
+                }
+    
+                $featuresWithPermissions[$feature->id] = [
+                    'feature_id' => $feature->id,
+                    'feature_name' => $feature->name,
+                    'permissions' => $permissionsArray,
+                ];
+                
+            }
+         
+            $feature_permission_check = DB::table('permissions')
+                                        ->join('features AS f', 'f.id', '=', 'permissions.feature_id')
+                                        ->join('roles_permission AS rp', 'rp.permission_id', '=', 'permissions.id')
+                                        ->join('roles AS r', 'r.id', '=', 'rp.role_id')
+                                        ->groupBy('r.name', 'f.name')
+                                        ->selectRaw('r.name AS rolename, GROUP_CONCAT(permissions.name) AS permissions, f.name AS feature')
+                                        ->get();
+            
+           // Get all roles with their name and ID
+            $roles = Roles::all(['id', 'name']);
+            // dd($roles);
+        }
         return view('users.create',[
             'features'=>$features,
-            'roles'=> $roles
+            'roles'=> $roles,
+            'featuresWithPermissions'=>$featuresWithPermissions,
+            'feature_permission_check'=> $feature_permission_check
         ]);
     }
 
@@ -99,22 +158,34 @@ class UsersController extends Controller
      */
     public function edit(User $user, int $id)
     {
-        $features =$this->getFeatures();
-        $role =  Roles::findOrFail($id)
-                ->where('id','=',$id)
-                ->select('id')
-                ->first();
- 
-        $user = DB::table('users')
-                ->find($id);
-        
-        $roles = Roles::all(['id', 'name']);
+        if(Auth::user()){
+            $this->authorize('update',new User);
+            $features =$this->getFeatures();
+            $role =  Roles::findOrFail($id)
+                    ->where('id','=',$id)
+                    ->select('id')
+                    ->first();
+     
+            $user = DB::table('users')
+                    ->find($id);
+            
+            $roles = Roles::all(['id', 'name']);
+
+            $feature_permission_check = DB::table('permissions')
+            ->join('features AS f', 'f.id', '=', 'permissions.feature_id')
+            ->join('roles_permission AS rp', 'rp.permission_id', '=', 'permissions.id')
+            ->join('roles AS r', 'r.id', '=', 'rp.role_id')
+            ->groupBy('r.name', 'f.name')
+            ->selectRaw('r.name AS rolename, GROUP_CONCAT(permissions.name) AS permissions, f.name AS feature')
+            ->get();
+        }
         // dd($roles);
         return view('users.edit',[
             'features'=>$features,
             'role'=> $role,
             'roles'=>$roles,
-            'user'=>$user
+            'user'=>$user,
+            '$feature_permission_check'=>$feature_permission_check
         ]);
     }
     

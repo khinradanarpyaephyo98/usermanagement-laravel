@@ -1,4 +1,4 @@
-### usermanagement-app-laravel
+### usermanagement-app-laravel ( Laravel 11.44.2)
 
 ```
 php artisan migrate
