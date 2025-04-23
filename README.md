@@ -21,7 +21,9 @@ php artisan serve
 * http://localhost:8000/dashboard
 * http://localhost:8000/users
 * http://localhost:8000/users/create
-* http://localhost:8000/users/edit
+* http://localhost:8000/users/{user-id}/edit
+* http://localhost:8000/users/{user-id}/delete
 * http://localhost:8000/roles
 * http://localhost:8000/roles/create
-* http://localhost:8000/roles/edit
+* http://localhost:8000/roles/{role-id}/edit
+* http://localhost:8000/roles/{role-id}/delete
